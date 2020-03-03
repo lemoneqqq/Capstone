@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 stop_words = stopwords.words('english')
 stop_words.extend(['every','onto','whose','could'])
 stop_words = set(stop_words)
+from yellowbrick.text import PosTagVisualizer
 
 
 def clean_syno(text)->pd:
@@ -83,35 +84,41 @@ def nltk_token(movies:list)->list:
     movie_syno_str = []
     result = []
     #syno_for_certain_genre = []
+    total_tag = []
     for movie in movies:
+        movie_tag = []
         cleaned = []
         movie_syno_str = movie[-1]
         words = []
-        tag = []
         syno_sentences = nltk.sent_tokenize(movie_syno_str,'english') ### tokenize the word.
         # sentences.append(syno_sentences)
         # #print(sentences)
         for sentence in syno_sentences:
             words.append(nltk.word_tokenize(sentence))
             for element in words:
-                tag.append(nltk.pos_tag(element,lang = 'eng')) ## give each word a tag. so that we know which word is noun, adj etc.
+                sentence_tag = []
+                sentence_tag = nltk.pos_tag(element,lang = 'eng') ## give each word a tag. so that we know which word is noun, adj etc.
+                movie_tag.append(sentence_tag)
             lemma = nltk.wordnet.WordNetLemmatizer()
-            for word_type in tag:
-                for word, type in word_type:
-                    if type.startswith('NN'):#### currently we only keep n, verb, adj, and return these words into it's origianl form:
+            for word, type in sentence_tag:
+                if type.startswith('NN'):#### currently we only keep n, verb, adj, and return these words into it's origianl form:
                 # likes -> like    leaves -> leaf
-                 ### here's what it means: https://zhuanlan.zhihu.com/p/38231514
-                        cleaned.append(lemma.lemmatize(word, pos='n'))
-                    elif type.startswith('V'):
-                        cleaned.append(lemma.lemmatize(word, pos='v'))
-                    elif type.startswith('JJ'):
-                        cleaned.append(lemma.lemmatize(word, pos='a'))
-                    elif type.startswith('R'):
-                        cleaned.append(lemma.lemmatize(word, pos='r'))
-                    else:
+                ### here's what it means: https://zhuanlan.zhihu.com/p/38231514
+                    cleaned.append(lemma.lemmatize(word, pos='n'))
+                elif type.startswith('V'):
+                    cleaned.append(lemma.lemmatize(word, pos='v'))
+                elif type.startswith('JJ'):
+                    cleaned.append(lemma.lemmatize(word, pos='a'))
+                elif type.startswith('R'):
+                    cleaned.append(lemma.lemmatize(word, pos='r'))
+                else:
                         # it is other form, disregard it.
-                        cleaned.append(word)
+                    cleaned.append(word)
         result.append(cleaned)
+        total_tag.append(movie_tag)
+    viz = PosTagVisualizer()
+    viz.fit(total_tag)
+    viz.show()
     return result
 
 
@@ -146,8 +153,8 @@ if __name__ == "__main__":
     Science_Fiction_movies = get_sgle_movie(Science_Fiction_ids)
     #print(action_movie)
     Science_Fiction_text = nltk_token(Science_Fiction_movies)
-    #print(len(Science_Fiction_text))
-    Science_Fiction_text = remove_stop(Science_Fiction_text)
     print(Science_Fiction_text)
+    Science_Fiction_text = remove_stop(Science_Fiction_text)
+    #print(Science_Fiction_text)
 
 
