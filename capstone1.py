@@ -87,6 +87,10 @@ def get_sgle_movie(genre_combo:list)->list:### get movie info based on genre.
 
 def nltk_token(movies:list)->list:
     ### for synopisis, clean up into sentence token- then work token, return word into orgianl form(lemmatize)
+    ### after tokenize the word, have their type and word ready:   Jhon: Noun, like: verb
+    # so that we could know which kind of word is more popular.
+    #and pos_tag is the word and type. in order to visualize the plot, the tag has to store as list of Document of
+    #sentence of pos_tag.
 
     origianl_form = []
     movie_syno_str = []
