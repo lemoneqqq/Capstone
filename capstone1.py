@@ -100,6 +100,7 @@ def nltk_token(movies:list)->list:
                 for word, type in word_type:
                     if type.startswith('NN'):#### currently we only keep n, verb, adj, and return these words into it's origianl form:
                 # likes -> like    leaves -> leaf
+                 ### here's what it means: https://zhuanlan.zhihu.com/p/38231514
                         cleaned.append(lemma.lemmatize(word, pos='n'))
                     elif type.startswith('V'):
                         cleaned.append(lemma.lemmatize(word, pos='v'))
