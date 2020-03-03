@@ -1,5 +1,13 @@
+"""
+
+DISNEY CAPSTONE PROJECT
+before you start, you should have NLTK ready, mostly NLTK stop words,sent_tokenize,wordnet
+and PosTagVisualizer, and please read the file as CSV, direct open XLSX will have an error.
+"""
+
+
+
 import csv
-import emoji
 import re
 import pandas as pd
 from collections import defaultdict
