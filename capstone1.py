@@ -1,5 +1,4 @@
 """
-
 DISNEY CAPSTONE PROJECT
 before you start, you should have NLTK ready, mostly NLTK stop words,sent_tokenize,wordnet
 and PosTagVisualizer, and please read the file as CSV, direct open XLSX will have an error.
@@ -8,6 +7,7 @@ and PosTagVisualizer, and please read the file as CSV, direct open XLSX will hav
 
 
 import csv
+import numpy as np
 import re
 import pandas as pd
 from collections import defaultdict
@@ -17,6 +17,8 @@ stop_words = stopwords.words('english')
 stop_words.extend(['every','onto','whose','could'])
 stop_words = set(stop_words)
 from yellowbrick.text import PosTagVisualizer
+import gensim.corpora as corpora
+from gensim import corpora, models
 
 
 def clean_syno(text)->pd:
@@ -97,16 +99,16 @@ def nltk_token(movies:list)->list:
     result = []
     #syno_for_certain_genre = []
     total_tag = []
-    for movie in movies:
+    for movie_syno_str in movies['synopsis']:
+        #movie_syno is single movie syno.
         movie_tag = []
         cleaned = []
-        movie_syno_str = movie[-1]
         words = []
-        syno_sentences = nltk.sent_tokenize(movie_syno_str,'english') ### tokenize the word.
+        syno_sentences = nltk.sent_tokenize(movie_syno_str,'english') ### tokenize the word by sentence
         # sentences.append(syno_sentences)
         # #print(sentences)
-        for sentence in syno_sentences:
-            words.append(nltk.word_tokenize(sentence))
+        for sentence in syno_sentences:# for every sentence in the movie syno.
+            words.append(nltk.word_tokenize(sentence))# tokenize the sentence by word_token
             for element in words:
                 sentence_tag = []
                 sentence_tag = nltk.pos_tag(element,lang = 'eng') ## give each word a tag. so that we know which word is noun, adj etc.
@@ -127,25 +129,42 @@ def nltk_token(movies:list)->list:
                         # it is other form, disregard it.
                     cleaned.append(word)
         result.append(cleaned)
+        #print(cleaned) #cleaned is changed one movie syno into a big list.
         total_tag.append(movie_tag)
-    viz = PosTagVisualizer()
-    viz.fit(total_tag)
-    viz.show()
+    # viz = PosTagVisualizer()
+    # viz.fit(total_tag)
+    # viz.show()
     return result
 
 
 def remove_stop(text:list)->list:
+    ### for every movie in certain genre, clean the stop word
     result= []
     for movie_syno in text:
         clean_syno = []
         #print(element)
-        for sentence in movie_syno:
-            sentence = re.sub(r'[^\w\s]', '', sentence)
-            if sentence != '':
-                if sentence not in stop_words:
-                    clean_syno.append(sentence)
+        for word in movie_syno:
+            word = re.sub(r'[^\w\s]', '', word)
+            if word != '':
+                if word not in stop_words:
+                    clean_syno.append(word)
         result.append(clean_syno)
     return result
+
+
+def avgtfidf(data:pd,tfidf:tuple) -> pd:
+    data = data.reset_index(drop = True)
+    for element in range(len(tfidf)):
+        sentence_score = []
+        for x, y in tfidf[element]:
+            sentence_score.append(y)
+        name.append(data['title_name'][element])
+        try:
+            score.append(np.mean(sentence_score))
+        except:
+            score.append(0)
+            word.append('')
+
 
 
 
@@ -154,7 +173,20 @@ def remove_stop(text:list)->list:
 if __name__ == "__main__":
     total_movie_info = clean_syno('Capstone 2020 - Disney - Movie data.csv')
     #print(movie_info[0])
-    genres = movie_classfier(total_movie_info)
+    df = pd.DataFrame(data=total_movie_info[1:],columns = total_movie_info[0])
+    #movie_genre = ['Action','Adventure','Animation','Comedy','Documentary','Drama','Family',
+     #              'Horror','Musical','Romantic Comedy','Science Fiction','Suspense','Western',]
+
+    ### slice and select movie by genre.
+    Animation_movies = df.loc[df['genre'] == 'Animation']
+    Action_movies = df.loc[df['genre'] == 'Action']
+    Documentary_movies = df.loc[df['genre'] == 'Documentary']
+    Comedy_movies = df.loc[df['genre'] == 'Comedy']
+    Adventure_movies = df.loc[df['genre'] == 'Adventure']
+    Science_Fiction_movies = df.loc[df['genre'] == 'Science Fiction']
+    Horror_movies = df.loc[df['genre'] == 'Horror']
+
+    """
     #seperaete movies into different genre with their ids.
     Action_ids,Adventure_ids,Animation_ids,Comedy_ids,Documentary_ids,Drama_ids,Family_ids,\
     Horror_ids,Musical_ids,Romantic_Comedy_ids,Science_Fiction_ids,Suspense_ids,Western_ids   =    genres['Action'],genres['Adventure'],\
@@ -162,11 +194,24 @@ if __name__ == "__main__":
                                                                                                    genres['Documentary'],genres['Drama'],genres['Family'],\
                                                                                                    genres['Horror'],genres['Musical'],genres['Romantic Comedy'],\
                                                                                                    genres['Science Fiction'],genres['Suspense'],genres['Western']
-    Science_Fiction_movies = get_sgle_movie(Science_Fiction_ids)
     #print(action_movie)
-    Science_Fiction_text = nltk_token(Science_Fiction_movies)
-    print(Science_Fiction_text)
-    Science_Fiction_text = remove_stop(Science_Fiction_text)
+    """
+    #Horror_movies_text = nltk_token(Horror_movies)
+    #Animation_movies_text = nltk_token(Animation_movies)
+    action_text = nltk_token(Action_movies)
     #print(Science_Fiction_text)
+    #print(len(Animation_movies_text))
+    action_text = remove_stop(action_text)
+    action_id2word = corpora.Dictionary(action_text)
+    action_corpus = [action_id2word.doc2bow(text) for text in action_text]
+    action_tfidf = models.TfidfModel(action_corpus)
+    action_corpus_tfidf = action_tfidf[action_corpus]
 
-
+    name_score = pd.DataFrame()
+    name = []
+    score = []
+    word = []
+    x = avgtfidf(Action_movies,action_corpus_tfidf)
+    name_score['title_name'] = name
+    name_score['mean_Score'] = score
+    name_score.to_csv('title_tfidf.csv')
